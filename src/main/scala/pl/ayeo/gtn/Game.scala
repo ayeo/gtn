@@ -34,17 +34,6 @@ object Game extends App {
     putStrLn(getLostMessage(guess, gameState.number)) *> gameLoop(gameState.fail())
   }
 
-  def wantToPlayMore(state: GameState): ZIO[Console with Random, Throwable, Unit] = for {
-    _ <- putStrLn("Want to play more?")
-    _ <- getStrLn.flatMap(f => if (f == "y") ZIO.succeed(f) else ZIO.fail(new IOException("See you soon!")))
-    _ <- play(state)
-  } yield ()
-
-  def play(state: GameState) = for {
-    number <- nextIntBetween(1, 100)
-    _ <- gameLoop(state.newNumber(number))
-  } yield ()
-
   def getGuess(name: String): ZIO[Console, Throwable, Int] = {
     for {
       _ <- putStrLn(s"What is your guess, ${name}?")
@@ -55,9 +44,20 @@ object Game extends App {
       }
       validNumber <-
         if (anNumber > 100 || anNumber < 1) putStrLn("Number must be between 1-100") *> getGuess(name)
-      else ZIO.succeed[Int](anNumber)
+        else ZIO.succeed[Int](anNumber)
     } yield validNumber
   }
+
+  def wantToPlayMore(state: GameState): ZIO[Console with Random, Throwable, Unit] = for {
+    _ <- putStrLn("Want to play more?")
+    _ <- getStrLn.flatMap(f => if (f == "y") ZIO.succeed(f) else ZIO.fail(new IOException("See you soon!")))
+    _ <- drawNewNumber(state)
+  } yield ()
+
+  def drawNewNumber(state: GameState) = for {
+    number <- nextIntBetween(1, 100)
+    _ <- gameLoop(state.newNumber(number))
+  } yield ()
 
   def gameLoop(state: GameState): ZIO[Console with Random, Throwable, Unit] =
     for {
@@ -69,7 +69,7 @@ object Game extends App {
   val init = for {
     _     <- putStrLn("Hello! What is your name?")
     name  <- getStrLn
-    _     <- play(GameState.withName(name))
+    _     <- drawNewNumber(GameState.withName(name, 0))
   } yield ()
 
   val runtime = Runtime.default
