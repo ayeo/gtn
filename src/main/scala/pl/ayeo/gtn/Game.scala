@@ -8,20 +8,22 @@ import zio.ZIO
 import java.io.IOException
 import scala.util.{Failure, Success, Try}
 
-final case class GameState private (userName: String, number: Int, guessNo: Int) {
+final case class GameState private(userName: String, number: Int, guessNo: Int) {
   def fail(): GameState = new GameState(userName, number, guessNo + 1)
+
   def newNumber(number: Int): GameState = new GameState(userName, number, 0)
 }
+
 object GameState {
   def withName(name: String, number: Int = 0) = new GameState(name, number, 0)
 }
 
 object Game extends App {
   def getVictoryMessage(n: Int): String = n match {
-      case 0 => "Perfect!"
-      case 1 => "Almost perfect"
-      case 2 => "Nice"
-      case n: Int => s"You have got it in ${n} rounds!"
+    case 0 => "Perfect!"
+    case 1 => "Almost perfect"
+    case 2 => "Nice"
+    case n: Int => s"You have got it in ${n} rounds!"
   }
 
   def getLostMessage(given: Int, expected: Int) =
@@ -36,9 +38,9 @@ object Game extends App {
 
   def getGuess(name: String): ZIO[Console, Throwable, Int] = {
     for {
-      _ <- putStrLn(s"What is your guess, ${name}?")
-      rawInput <- getStrLn
-      anNumber <- Try(rawInput.toInt) match {
+      _           <- putStrLn(s"What is your guess, ${name}?")
+      rawInput    <- getStrLn
+      anNumber    <- Try(rawInput.toInt) match {
         case Success(answer) => ZIO.succeed(answer)
         case Failure(e) => putStrLn("You are supposed to enter a number") *> getGuess(name)
       }
@@ -67,9 +69,9 @@ object Game extends App {
 
 
   val init = for {
-    _     <- putStrLn("Hello! What is your name?")
-    name  <- getStrLn
-    _     <- drawNewNumber(GameState.withName(name, 0))
+    _ <- putStrLn("Hello! What is your name?")
+    name <- getStrLn
+    _ <- drawNewNumber(GameState.withName(name, 0))
   } yield ()
 
   val runtime = Runtime.default
