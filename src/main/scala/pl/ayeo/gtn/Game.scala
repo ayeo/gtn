@@ -91,7 +91,7 @@ object Game extends App {
     }
   } yield n
 
-  def loop(message: String, state: GameState) = for {
+  def loop(message: String, state: GameState): ZIO[Console with Random, Throwable, Unit] = for {
     guess   <- guess(message)
     _       <- if (guess == state.number) victory(state) else lost(state, guess)
   } yield ()
