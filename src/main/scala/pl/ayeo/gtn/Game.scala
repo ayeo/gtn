@@ -76,7 +76,9 @@ object Game extends App {
 
   def wantToPlayMore(state: GameState): ZIO[Console with Random, Throwable, Unit] = for {
     _       <- putStrLn("Want to play more?")
-    _       <- getStrLn.flatMap(f => if (f == "y") ZIO.succeed(f) else ZIO.die(new IOException("See you soon!")))
+    _       <- getStrLn.flatMap(f =>
+      if (f == "y") ZIO.succeed(f)
+      else ZIO.die(new IOException(s"See you soon. ${state.userName}!")))
     number  <- draw
     _       <- loop("Give me your guess", state.newNumber(number))
   } yield ()
@@ -97,7 +99,7 @@ object Game extends App {
   val init = for {
     name    <- getName("Hello! What is your name?")
     number  <- draw
-    _       <- loop("What is your first guess?", GameState.withName(name, number))
+    _       <- loop(s"What is your first guess, $name?", GameState.withName(name, number))
   } yield ()
 
   val runtime = Runtime.default
