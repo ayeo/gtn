@@ -1,17 +1,14 @@
 package pl.ayeo.gtn
 
-import pl.ayeo.gtn.Game.{guess, lost, victory}
 import zio.console._
 import zio.random._
 import zio.Runtime
 import zio.ZIO
-
 import java.io.IOException
 import scala.util.{Failure, Success, Try}
 
 final case class GameState private(userName: Name, number: Number, guessNo: Int) {
   def fail(): GameState = new GameState(userName, number, guessNo + 1)
-
   def newNumber(number: Number): GameState = new GameState(userName, number, 0)
 }
 object GameState {
@@ -24,11 +21,13 @@ object Name {
 }
 
 final case class Number private(number: Int) {
-  def <(other: Number): Boolean = number < other.number
+  val getInt: Int = number
 }
 object Number {
+  val from: Int = 1
+  val to: Int = 100
   def make(number: Int): Either[String, Number] =
-    if (number < 1 || number > 100) Left("Number must be between 1-100")
+    if (number < from || number > to) Left(s"Number must be between $from-$to")
     else Right(Number(number))
 
   def fromString(n: String): Either[String, Number] = {
@@ -40,16 +39,18 @@ object Number {
 }
 
 object Game extends App {
+  implicit def convertNumberToInt(number: Number): Int = number.getInt
+
   def getName(message: String): ZIO[Console, IOException, Name] = for {
-    _ <- putStrLn(message)
+    _     <- putStrLn(message)
     input <- getStrLn
-    name <- ZIO.fromOption(Name.make(input)) <> getName("Invalid name, please focus more...")
+    name  <- ZIO.fromOption(Name.make(input)) <> getName("Invalid name, please try again")
   } yield name
 
   def guess(message: String): ZIO[Console, IOException, Number] = for {
-    _ <- putStrLn(message)
-    input <- getStrLn
-    number <- Number.fromString(input) match {
+    _       <- putStrLn(message)
+    input   <- getStrLn
+    number  <- Number.fromString(input) match {
       case Right(n) => ZIO.succeed(n)
       case Left(message) => guess(message)
     }
@@ -76,15 +77,15 @@ object Game extends App {
   def wantToPlayMore(state: GameState): ZIO[Console with Random, Throwable, Unit] = for {
     _       <- putStrLn("Want to play more?")
     _       <- getStrLn.flatMap(f => if (f == "y") ZIO.succeed(f) else ZIO.fail(new IOException("See you soon!")))
-    number  <- drawNewNumber()
+    number  <- draw
     _       <- loop("Give me your guess", state.newNumber(number))
   } yield ()
 
-  def drawNewNumber(): ZIO[Random, IOException, Number] = for {
-    number <- nextIntBetween(1, 100)
+  val draw: ZIO[Random, IOException, Number] = for {
+    number <- nextIntBetween(Number.from, Number.to)
     n <- Number.make(number) match {
       case Right(x) => ZIO.succeed(x)
-      case Left(_) => drawNewNumber()
+      case Left(_) => draw
     }
   } yield n
 
@@ -95,7 +96,7 @@ object Game extends App {
 
   val init = for {
     name    <- getName("Hello! What is your name?")
-    number  <- drawNewNumber()
+    number  <- draw
     _       <- loop("What is your first guess?", GameState.withName(name, number))
   } yield ()
 
