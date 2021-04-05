@@ -8,7 +8,7 @@ import java.io.IOException
 import scala.util.{Failure, Success, Try}
 
 final case class GameState private(userName: Name, number: Number, guessNo: Int) {
-  val fail: GameState = new GameState(userName, number, guessNo + 1)
+  val fail: GameState = new GameState(userName, number, guessNo + 1)gi
   def newNumber(number: Number): GameState = new GameState(userName, number, 0)
 }
 object GameState {
@@ -85,10 +85,7 @@ object Game extends App {
 
   val draw: ZIO[Random, IOException, Number] = for {
     number <- nextIntBetween(Number.from, Number.to)
-    n <- Number.make(number) match {
-      case Right(x) => ZIO.succeed(x)
-      case Left(_) => draw
-    }
+    n <- ZIO.fromEither(Number.make(number)) <> draw
   } yield n
 
   def loop(message: String, state: GameState): ZIO[Console with Random, Throwable, Unit] = for {
