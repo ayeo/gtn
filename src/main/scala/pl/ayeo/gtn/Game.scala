@@ -8,7 +8,7 @@ import java.io.IOException
 import scala.util.{Failure, Success, Try}
 
 final case class GameState private(userName: Name, number: Number, guessNo: Int) {
-  val fail: GameState = new GameState(userName, number, guessNo + 1)gi
+  val fail: GameState = new GameState(userName, number, guessNo + 1)
   def newNumber(number: Number): GameState = new GameState(userName, number, 0)
 }
 object GameState {
